@@ -3,7 +3,7 @@
 This library provides a client for doing simple publish/subscribe messaging with
 a server that supports MQTT.
 
-I have added another connect() method for allowing a byte buffer and buffer length to be passed for death payload instead of a const char. This is so the death payload can be in a serialized format like google protobuf and not run into issues in the case of a 0 value byte (null character).
+I have added another connect() method for allowing a byte buffer and buffer length to be passed for death payload instead of a const char. This is so the death payload can be in a serialized format like google protobuf and not run into issues with const char in the case that there is a 0 value byte in the payload.
 
 ## Examples
 
