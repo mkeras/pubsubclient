@@ -284,6 +284,113 @@ boolean PubSubClient::connect(const char *id, const char *user, const char *pass
     return true;
 }
 
+boolean PubSubClient::connect(const char* id, const char* user, const char* pass, const char* willTopic, uint8_t willQos, boolean willRetain, const uint8_t* willBuffer, size_t willLength, boolean cleanSession) {
+    if (!connected()) {
+        int result = 0;
+
+
+        if(_client->connected()) {
+            result = 1;
+        } else {
+            if (domain != NULL) {
+                result = _client->connect(this->domain, this->port);
+            } else {
+                result = _client->connect(this->ip, this->port);
+            }
+        }
+
+        if (result == 1) {
+            nextMsgId = 1;
+            // Leave room in the buffer for header and variable length field
+            uint16_t length = MQTT_MAX_HEADER_SIZE;
+            unsigned int j;
+
+#if MQTT_VERSION == MQTT_VERSION_3_1
+            uint8_t d[9] = {0x00,0x06,'M','Q','I','s','d','p', MQTT_VERSION};
+#define MQTT_HEADER_VERSION_LENGTH 9
+#elif MQTT_VERSION == MQTT_VERSION_3_1_1
+            uint8_t d[7] = {0x00,0x04,'M','Q','T','T',MQTT_VERSION};
+#define MQTT_HEADER_VERSION_LENGTH 7
+#endif
+            for (j = 0;j<MQTT_HEADER_VERSION_LENGTH;j++) {
+                this->buffer[length++] = d[j];
+            }
+
+            uint8_t v;
+            if (willTopic) {
+                v = 0x04|(willQos<<3)|(willRetain<<5);
+            } else {
+                v = 0x00;
+            }
+            if (cleanSession) {
+                v = v|0x02;
+            }
+
+            if(user != NULL) {
+                v = v|0x80;
+
+                if(pass != NULL) {
+                    v = v|(0x80>>1);
+                }
+            }
+            this->buffer[length++] = v;
+
+            this->buffer[length++] = ((this->keepAlive) >> 8);
+            this->buffer[length++] = ((this->keepAlive) & 0xFF);
+
+            CHECK_STRING_LENGTH(length,id)
+            length = writeString(id,this->buffer,length);
+            if (willTopic) {
+                CHECK_STRING_LENGTH(length,willTopic)
+                length = writeString(willTopic,this->buffer,length);
+                CHECK_STRING_BUFFER_LENGTH(length, willLength)
+
+                length = writeStringBuffer(willBuffer,willLength,this->buffer,length);
+            }
+
+            if(user != NULL) {
+                CHECK_STRING_LENGTH(length,user)
+                length = writeString(user,this->buffer,length);
+                if(pass != NULL) {
+                    CHECK_STRING_LENGTH(length,pass)
+                    length = writeString(pass,this->buffer,length);
+                }
+            }
+
+            write(MQTTCONNECT,this->buffer,length-MQTT_MAX_HEADER_SIZE);
+
+            lastInActivity = lastOutActivity = millis();
+
+            while (!_client->available()) {
+                unsigned long t = millis();
+                if (t-lastInActivity >= ((int32_t) this->socketTimeout*1000UL)) {
+                    _state = MQTT_CONNECTION_TIMEOUT;
+                    _client->stop();
+                    return false;
+                }
+            }
+            uint8_t llen;
+            uint32_t len = readPacket(&llen);
+
+            if (len == 4) {
+                if (buffer[3] == 0) {
+                    lastInActivity = millis();
+                    pingOutstanding = false;
+                    _state = MQTT_CONNECTED;
+                    return true;
+                } else {
+                    _state = buffer[3];
+                }
+            }
+            _client->stop();
+        } else {
+            _state = MQTT_CONNECT_FAILED;
+        }
+        return false;
+    }
+    return true;
+}
+
 // reads a byte into result
 boolean PubSubClient::readByte(uint8_t * result) {
    uint32_t previousMillis = millis();
@@ -672,6 +779,20 @@ uint16_t PubSubClient::writeString(const char* string, uint8_t* buf, uint16_t po
     uint16_t i = 0;
     pos += 2;
     while (*idp) {
+        buf[pos++] = *idp++;
+        i++;
+    }
+    buf[pos-i-2] = (i >> 8);
+    buf[pos-i-1] = (i & 0xFF);
+    return pos;
+}
+
+
+uint16_t PubSubClient::writeStringBuffer(const uint8_t* stringBuff, size_t stringBuffLength, uint8_t* buf, uint16_t pos) {
+    const uint8_t* idp = stringBuff;
+    uint16_t i = 0;
+    pos += 2;
+    while (i < stringBuffLength) {
         buf[pos++] = *idp++;
         i++;
     }
