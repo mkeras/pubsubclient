@@ -1,3 +1,11 @@
+# PubSubClient Fork
+This library is a fork of [Nick O'Leary's PubSubClient](https://pubsubclient.knolleary.net). The only changes I have made is an additional connect method implementation:
+```cpp
+boolean connect(const char* id, const char* user, const char* pass, const char* willTopic, uint8_t willQos, boolean willRetain, const uint8_t* willBuffer, size_t willLength, boolean cleanSession);
+```
+The purpose is to accept will payloads in serial formats like google protobufs. A serialized protobuf payload can contain 0's, which is the end of string in a char, thus resulting in errors when using such a payload as a `const char* willMessage`. By having on option for `const uint8_t* willBuffer` and `size_t willLength`, this problem is resolved.
+
+
 # Arduino Client for MQTT
 
 This library provides a client for doing simple publish/subscribe messaging with
