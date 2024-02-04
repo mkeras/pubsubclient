@@ -1,8 +1,9 @@
 /*
- PubSubClient.h - A simple client for MQTT.
+ PubSubClient.h - A simple client for MQTT.PubSubClient_h
   Nick O'Leary
   http://knolleary.net
-*/
+
+ */
 
 #ifndef PubSubClient_h
 #define PubSubClient_h
