@@ -3,6 +3,7 @@
   Nick O'Leary
   http://knolleary.net
 
+  connect function "boolean connect(const char* id, const char* user, const char* pass, const char* willTopic, uint8_t willQos, boolean willRetain, const uint8_t* willBuffer, size_t willLength, boolean cleanSession);" added by https://github.com/mkeras
  */
 
 #ifndef PubSubClient_h

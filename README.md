@@ -5,6 +5,8 @@ boolean connect(const char* id, const char* user, const char* pass, const char* 
 ```
 The purpose is to accept will payloads in serial formats like google protobufs. A serialized protobuf payload can contain 0's, which is the end of string in a char, thus resulting in errors when using such a payload as a `const char* willMessage`. By having on option for `const uint8_t* willBuffer` and `size_t willLength`, this problem is resolved.
 
+Refactored the header and cpp files, but the definitions of the library remain the same, meaning PubSubClient and this library cannot be used at the same time.
+
 
 # Arduino Client for MQTT
 

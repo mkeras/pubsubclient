@@ -3,6 +3,9 @@
   PubSubClient.cpp - A simple client for MQTT.
   Nick O'Leary
   http://knolleary.net
+
+  connect function "boolean connect(const char* id, const char* user, const char* pass, const char* willTopic, uint8_t willQos, boolean willRetain, const uint8_t* willBuffer, size_t willLength, boolean cleanSession);" added by https://github.com/mkeras
+  
 */
 
 #include "PubSubClient_iiot.h"
